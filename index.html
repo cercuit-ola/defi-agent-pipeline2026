@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeFi Research Agent Pipeline — Developer Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET & TOKENS ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #0d0d0d;
+  --paper: #f5f2eb;
+  --muted: #6b6455;
+  --accent: #c84b1f;
+  --accent2: #1f6bc8;
+  --green: #2a9d5c;
+  --purple: #7c3aed;
+  --border: #d6d0c4;
+  --card: #ffffff;
+  --tag-bg: #ede9e0;
+  --code-bg: #1a1a1a;
+  --code-text: #e8e4d8;
+  --sidebar-w: 260px;
+  --topbar-h: 52px;
+}
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  line-height: 1.75;
+}
+
+/* ─── TOPBAR ─────────────────────────────────────────────────────── */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  height: var(--topbar-h);
+  background: var(--ink);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid #222;
+}
+.topbar-brand {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; color: var(--paper);
+  letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none;
+}
+.topbar-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: #555; letter-spacing: 0.08em;
+}
+.menu-toggle {
+  display: none; background: none; border: none;
+  cursor: pointer; color: var(--paper); font-size: 18px; line-height: 1;
+}
+
+/* ─── LAYOUT ─────────────────────────────────────────────────────── */
+.layout {
+  display: flex;
+  padding-top: var(--topbar-h);
+  min-height: 100vh;
+}
+
+/* ─── SIDEBAR ────────────────────────────────────────────────────── */
+.sidebar {
+  position: fixed;
+  top: var(--topbar-h); left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--ink);
+  overflow-y: auto;
+  z-index: 100;
+  padding: 2rem 0 3rem;
+  border-right: 1px solid #1e1e1e;
+  transition: transform 0.25s ease;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+.sidebar-section {
+  margin-bottom: 0.25rem;
+}
+.sidebar-section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: #444; padding: 0.9rem 1.5rem 0.4rem;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.sidebar-section-label::after {
+  content: ''; flex: 1; height: 1px; background: #222;
+}
+.sidebar-tag {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 2px; margin: 0 1.25rem 0.5rem;
+}
+.tag-concepts { background: #3a1a10; color: #e8927a; }
+.tag-guides   { background: #0e1e36; color: #7aabe8; }
+.tag-reference{ background: #0e2a1c; color: #7ae8b0; }
+.tag-trouble  { background: #1e1230; color: #b97ae8; }
+
+.sidebar-link {
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: #666; text-decoration: none;
+  padding: 0.3rem 1.5rem 0.3rem 2rem;
+  letter-spacing: 0.04em;
+  border-left: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sidebar-link::before { content: '↳ '; color: #333; }
+.sidebar-link:hover { color: #bbb; background: rgba(255,255,255,0.03); }
+.sidebar-link.active {
+  color: var(--paper);
+  border-left-color: var(--accent);
+  background: rgba(200,75,31,0.08);
+}
+.sidebar-section-link {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: #888; text-decoration: none;
+  padding: 0.5rem 1.5rem;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  transition: color 0.15s;
+}
+.sidebar-section-link:hover { color: var(--paper); }
+.sidebar-section-link.active { color: var(--paper); }
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-concepts { background: var(--accent); }
+.dot-guides   { background: var(--accent2); }
+.dot-reference{ background: var(--green); }
+.dot-trouble  { background: var(--purple); }
+
+/* ─── MAIN CONTENT ───────────────────────────────────────────────── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-width: 0;
+}
+
+/* ─── HERO ───────────────────────────────────────────────────────── */
+.hero {
+  padding: 4rem 3rem 3rem;
+  max-width: 860px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+.hero-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 1.25rem;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.hero-label::before { content: ''; display: inline-block; width: 28px; height: 1px; background: var(--accent); }
+.hero h1 {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 1.25rem;
+}
+.hero h1 em { font-style: italic; font-weight: 300; color: var(--muted); }
+.hero-sub { font-size: 1rem; color: var(--muted); max-width: 560px; margin-bottom: 2rem; }
+.hero-tags {
+  display: flex; gap: 0.75rem; flex-wrap: wrap;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.hero-tag {
+  background: var(--tag-bg); color: var(--muted);
+  padding: 4px 10px; border-radius: 2px;
+}
+
+/* ─── PIPELINE STRIP ─────────────────────────────────────────────── */
+.pipeline-strip {
+  display: flex; border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+.pipeline-stage {
+  flex: 1; min-width: 130px;
+  padding: 1.25rem 1rem;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+.pipeline-stage:last-child { border-right: none; }
+.ps-num { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+.ps-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 0.95rem; margin-bottom: 0.3rem; }
+.ps-desc { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+.ps-arrow { position: absolute; right: -8px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 16px; background: var(--paper); z-index: 2; }
+
+/* ─── DIATAXIS QUICK-NAV CARDS ───────────────────────────────────── */
+.section-nav-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.snav-card {
+  background: var(--card); padding: 1.25rem 1.5rem;
+  text-decoration: none; color: inherit; display: block;
+  border-left: 3px solid transparent;
+  transition: background 0.12s;
+}
+.snav-card:hover { background: #fafaf8; }
+.snav-card.c-concepts { border-color: var(--accent); }
+.snav-card.c-guides   { border-color: var(--accent2); }
+.snav-card.c-reference{ border-color: var(--green); }
+.snav-card.c-trouble  { border-color: var(--purple); }
+.snav-pill {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  display: inline-block; padding: 2px 7px; border-radius: 2px; margin-bottom: 0.6rem;
+}
+.p-concepts { background: #fde8e1; color: var(--accent); }
+.p-guides   { background: #e1edfb; color: var(--accent2); }
+.p-reference{ background: #e1f5ec; color: var(--green); }
+.p-trouble  { background: #ede9ff; color: var(--purple); }
+.snav-card h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem; }
+.snav-card p  { font-size: 0.78rem; color: var(--muted); line-height: 1.5; margin: 0; }
+
+/* ─── SECTION WRAPPERS ───────────────────────────────────────────── */
+.doc-section {
+  border-bottom: 1px solid var(--border);
+}
+.section-header {
+  padding: 3rem 3rem 0;
+  max-width: 860px;
+}
+.section-header .page-tag {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  display: inline-block; padding: 3px 10px; border-radius: 2px; margin-bottom: 1rem;
+}
+.section-header h2 {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  letter-spacing: -0.02em; margin-bottom: 0.75rem;
+}
+.section-header p { font-size: 0.95rem; color: var(--muted); max-width: 560px; margin-bottom: 2rem; }
+
+.doc-body {
+  padding: 2rem 3rem 3.5rem;
+  max-width: 860px;
+}
+.doc-body h3 {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 1.35rem; letter-spacing: -0.01em;
+  margin: 2.5rem 0 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.doc-body h3:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+.doc-body h4 {
+  font-family: 'DM Sans', sans-serif; font-weight: 500;
+  font-size: 1rem; margin: 1.75rem 0 0.6rem;
+}
+.doc-body p { margin-bottom: 1.1rem; font-size: 0.95rem; }
+.doc-body ul, .doc-body ol { margin: 0 0 1.1rem 1.5rem; font-size: 0.95rem; }
+.doc-body li { margin-bottom: 0.35rem; }
+
+/* ─── CODE ───────────────────────────────────────────────────────── */
+pre {
+  background: var(--code-bg); color: var(--code-text);
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem;
+  line-height: 1.65; border-radius: 3px;
+  padding: 1.25rem 1.5rem; overflow-x: auto;
+  margin: 1.25rem 0;
+  border-left: 3px solid var(--accent);
+}
+code:not(pre code) {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.82em;
+  background: var(--tag-bg); padding: 2px 6px; border-radius: 2px;
+}
+.comment { color: #555; }
+.key { color: #89b4fa; }
+.val { color: #a6e3a1; }
+.str { color: #f9e2af; }
+.num { color: #cba6f7; }
+
+/* ─── TABLES ─────────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; font-size: 0.83rem; margin: 1.25rem 0; overflow-x: auto; display: block; }
+th {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  background: var(--tag-bg); padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border); text-align: left; white-space: nowrap;
+}
+td { padding: 0.55rem 0.9rem; border: 1px solid var(--border); vertical-align: top; }
+tr:nth-child(even) td { background: rgba(0,0,0,0.015); }
+
+/* ─── CALLOUTS ───────────────────────────────────────────────────── */
+.callout {
+  border-left: 3px solid var(--accent);
+  background: #fdf3ef; padding: 0.9rem 1.1rem;
+  border-radius: 0 3px 3px 0; margin: 1.25rem 0; font-size: 0.88rem;
+}
+.callout.info    { border-color: var(--accent2); background: #f0f4fd; }
+.callout.success { border-color: var(--green); background: #f0faf4; }
+.callout.warning { border-color: #d4a017; background: #fdf8ec; }
+.callout strong {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  letter-spacing: 0.12em; text-transform: uppercase; display: block; margin-bottom: 0.35rem;
+}
+
+/* ─── GUIDES-SPECIFIC ────────────────────────────────────────────── */
+.step-block { display: flex; gap: 1.25rem; margin-bottom: 1.75rem; align-items: flex-start; }
+.step-num {
+  font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; font-weight: 500;
+  color: var(--accent); min-width: 2rem; line-height: 1; padding-top: 2px;
+}
+.step-body h4 { margin-top: 0; }
+.case-header {
+  background: var(--ink); color: var(--paper);
+  padding: 1.75rem 2rem; border-radius: 3px; margin: 2rem 0;
+}
+.case-header h3 {
+  font-family: 'Fraunces', serif; font-weight: 300; font-style: italic;
+  font-size: 1.6rem; color: var(--paper);
+  border: none; padding: 0; margin: 0 0 0.4rem; letter-spacing: 0;
+}
+.case-header p { color: #888; font-size: 0.88rem; margin: 0; }
+.flow-diagram {
+  background: #111; border-radius: 3px;
+  padding: 1.25rem 1.5rem; margin: 1.25rem 0;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem;
+  color: #ccc; overflow-x: auto; line-height: 1.7;
+}
+.flow-diagram .fg { color: #89b4fa; }
+.flow-diagram .fa { color: #a6e3a1; }
+.flow-diagram .fp { color: #f9e2af; }
+.flow-diagram .fr { color: #f38ba8; }
+
+/* ─── TROUBLESHOOTING-SPECIFIC ───────────────────────────────────── */
+.issue-block { border: 1px solid var(--border); border-radius: 3px; margin-bottom: 1.25rem; overflow: hidden; }
+.issue-header {
+  background: var(--tag-bg); padding: 0.7rem 1.1rem;
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+}
+.issue-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; font-weight: 500; flex: 1; }
+.issue-stage {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px;
+}
+.stage-ingest { background: #fde8e1; color: var(--accent); }
+.stage-norm   { background: #e1edfb; color: var(--accent2); }
+.stage-score  { background: #e1f5ec; color: var(--green); }
+.stage-output { background: #ede9ff; color: var(--purple); }
+.issue-body { padding: 1.1rem 1.25rem; font-size: 0.88rem; }
+.issue-body p { margin-bottom: 0.65rem; }
+.issue-body p:last-child { margin-bottom: 0; }
+.symptom { color: var(--muted); font-style: italic; }
+.fix-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--green); display: block; margin: 0.65rem 0 0.35rem;
+}
+
+/* ─── FOOTER ─────────────────────────────────────────────────────── */
+.site-footer {
+  padding: 2rem 3rem;
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+  border-top: 1px solid var(--border);
+}
+.site-footer p { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 260px; }
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .menu-toggle { display: block; }
+  .hero, .section-header, .doc-body, .site-footer { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .section-nav-grid { grid-template-columns: repeat(2, 1fr); }
+  .pipeline-strip { display: none; }
+}
+@media (max-width: 480px) {
+  .section-nav-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <a class="topbar-brand" href="#home">DeFi Agent Pipeline Docs</a>
+  <span class="topbar-meta">v1.0 · 2026 · Diataxis</span>
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+
+  <div class="sidebar-section">
+    <p class="sidebar-section-label">Overview</p>
+    <a class="sidebar-section-link" href="#home">
+      <span class="dot" style="background:#555;"></span> Home
+    </a>
+  </div>
+
+  <div class="sidebar-section">
+    <a class="sidebar-section-link" href="#concepts">
+      <span class="dot dot-concepts"></span> Concepts
+    </a>
+    <span class="sidebar-tag tag-concepts">Understanding</span>
+    <a class="sidebar-link" href="#what-is">What is a DeFi research agent?</a>
+    <a class="sidebar-link" href="#why-pipeline">Why pipeline architecture matters</a>
+    <a class="sidebar-link" href="#data-taxonomy">Data source taxonomy</a>
+    <a class="sidebar-link" href="#decision-logic">Decision logic model</a>
+    <a class="sidebar-link" href="#trust-problem">The trust problem</a>
+    <a class="sidebar-link" href="#output-model">Output model</a>
+  </div>
+
+  <div class="sidebar-section">
+    <a class="sidebar-section-link" href="#guides">
+      <span class="dot dot-guides"></span> Guides
+    </a>
+    <span class="sidebar-tag tag-guides">Step-by-step</span>
+    <a class="sidebar-link" href="#setup">Setting up ingestion</a>
+    <a class="sidebar-link" href="#normalise">Normalising data</a>
+    <a class="sidebar-link" href="#scoring-guide">Running the scoring engine</a>
+    <a class="sidebar-link" href="#decision-guide">Interpreting decisions</a>
+    <a class="sidebar-link" href="#output-guide">Reading outputs</a>
+    <a class="sidebar-link" href="#case-study">Case study: OpenClawD / AiXT</a>
+  </div>
+
+  <div class="sidebar-section">
+    <a class="sidebar-section-link" href="#reference">
+      <span class="dot dot-reference"></span> Reference
+    </a>
+    <span class="sidebar-tag tag-reference">Specs</span>
+    <a class="sidebar-link" href="#osf">OSF-1 scoring formula</a>
+    <a class="sidebar-link" href="#normalised-record">NormalisedRecord schema</a>
+    <a class="sidebar-link" href="#json-schema">Output JSON schema</a>
+    <a class="sidebar-link" href="#api-endpoints">Data source API endpoints</a>
+    <a class="sidebar-link" href="#asset-registry">Asset registry</a>
+    <a class="sidebar-link" href="#strategy-codes">Strategy codes</a>
+    <a class="sidebar-link" href="#config-reference">Configuration reference</a>
+  </div>
+
+  <div class="sidebar-section">
+    <a class="sidebar-section-link" href="#troubleshooting">
+      <span class="dot dot-trouble"></span> Troubleshooting
+    </a>
+    <span class="sidebar-tag tag-trouble">Diagnosis</span>
+    <a class="sidebar-link" href="#ingestion-issues">Ingestion failures</a>
+    <a class="sidebar-link" href="#normalisation-issues">Normalisation errors</a>
+    <a class="sidebar-link" href="#scoring-issues">Scoring issues</a>
+    <a class="sidebar-link" href="#output-issues">Output problems</a>
+    <a class="sidebar-link" href="#checklist">First-response checklist</a>
+  </div>
+
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO -->
+  <section id="home">
+    <div class="hero">
+      <p class="hero-label">Developer Documentation · v1.0 · 2026</p>
+      <h1>The DeFi Research Agent <em>Pipeline</em></h1>
+      <p class="hero-sub">A structured framework for understanding how autonomous research agents ingest on-chain data, score opportunities, and produce verifiable outputs — without writing the agent yourself.</p>
+      <div class="hero-tags">
+        <span class="hero-tag">📡 Data Sources</span>
+        <span class="hero-tag">⚙️ Decision Logic</span>
+        <span class="hero-tag">📊 Output Formats</span>
+        <span class="hero-tag">🔍 OpenClawD · AiXT Case Study</span>
+        <span class="hero-tag">Diataxis Framework</span>
+      </div>
+    </div>
+
+    <!-- PIPELINE STAGES -->
+    <div class="pipeline-strip">
+      <div class="pipeline-stage">
+        <div class="ps-num">01</div>
+        <div class="ps-name">Ingestion</div>
+        <div class="ps-desc">On-chain RPC, DEX feeds, oracle prices, event logs</div>
+        <span class="ps-arrow">›</span>
+      </div>
+      <div class="pipeline-stage">
+        <div class="ps-num">02</div>
+        <div class="ps-name">Normalisation</div>
+        <div class="ps-desc">Schema mapping, deduplication, timestamp alignment</div>
+        <span class="ps-arrow">›</span>
+      </div>
+      <div class="pipeline-stage">
+        <div class="ps-num">03</div>
+        <div class="ps-name">Scoring</div>
+        <div class="ps-desc">OSF-1 formula, opportunity ranking, risk filters</div>
+        <span class="ps-arrow">›</span>
+      </div>
+      <div class="pipeline-stage">
+        <div class="ps-num">04</div>
+        <div class="ps-name">Decision</div>
+        <div class="ps-desc">Strategy selection, threshold gating, confidence checks</div>
+        <span class="ps-arrow">›</span>
+      </div>
+      <div class="pipeline-stage">
+        <div class="ps-num">05</div>
+        <div class="ps-name">Output</div>
+        <div class="ps-desc">JSON reports, alerts, dashboards, signed attestations</div>
+      </div>
+    </div>
+
+    <!-- SECTION QUICK-NAV -->
+    <div class="section-nav-grid">
+      <a class="snav-card c-concepts" href="#concepts">
+        <span class="snav-pill p-concepts">Concepts</span>
+        <h3>Understanding the Pipeline</h3>
+        <p>Mental models, data taxonomy, trust problem, output model.</p>
+      </a>
+      <a class="snav-card c-guides" href="#guides">
+        <span class="snav-pill p-guides">Guides</span>
+        <h3>Simulating the Pipeline</h3>
+        <p>Step-by-step setup, normalisation, scoring, case study.</p>
+      </a>
+      <a class="snav-card c-reference" href="#reference">
+        <span class="snav-pill p-reference">Reference</span>
+        <h3>Technical Specifications</h3>
+        <p>OSF-1 formula, JSON schemas, API endpoints, strategy codes.</p>
+      </a>
+      <a class="snav-card c-trouble" href="#troubleshooting">
+        <span class="snav-pill p-trouble">Troubleshooting</span>
+        <h3>Diagnosing Issues</h3>
+        <p>Feed failures, scoring bugs, output errors, first-response checklist.</p>
+      </a>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- CONCEPTS                                                        -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="doc-section" id="concepts">
+    <div class="section-header">
+      <span class="page-tag p-concepts">Concepts</span>
+      <h2>Understanding the DeFi Research Agent Pipeline</h2>
+      <p>The mental models you need before you touch any configuration or code. Start here.</p>
+    </div>
+    <div class="doc-body">
+
+      <h3 id="what-is">What is a DeFi research agent?</h3>
+      <p>A DeFi research agent is a software system — often AI-augmented — that autonomously monitors decentralised finance protocols, ingests structured data from multiple sources, applies scoring or ranking logic to candidate opportunities, and produces outputs that inform or execute financial decisions.</p>
+      <p>In 2026, research agents range from simple yield-monitoring bots that compare APRs across lending markets, to multi-modal systems like <strong>OpenClawD</strong> and <strong>AiXT Trading Intelligence</strong> that fuse on-chain event streams, sentiment signals, and cross-chain liquidity metrics to surface opportunities within milliseconds of a state change.</p>
+      <p>The word "research" is deliberate. Unlike execution agents (which transact), a research agent's primary output is <em>information</em>: structured reports, scored opportunity sets, and ranked strategy candidates. A human or an execution layer makes the final call.</p>
+      <div class="callout info">
+        <strong>Key distinction</strong>
+        A research agent observes and ranks. An execution agent acts. This documentation covers research agents only — the layer that turns raw data into investable intelligence.
+      </div>
+
+      <h3 id="why-pipeline">Why pipeline architecture matters</h3>
+      <p>DeFi data is fast, fragmented, and adversarial. A yield opportunity on Aave might last 40 seconds before arbitrageurs close it. A governance proposal on Compound can shift protocol risk parameters before your scoring model sees it. Without a structured pipeline, agents fail in predictable ways:</p>
+      <ul>
+        <li><strong>Stale data decisions</strong> — scoring an opportunity based on a price that was valid 12 blocks ago.</li>
+        <li><strong>Source conflation</strong> — treating on-chain oracle prices and CEX spot prices as equivalent without normalisation.</li>
+        <li><strong>Scoring drift</strong> — ranking logic that uses different risk parameters than the ones the output consumer expects.</li>
+        <li><strong>Silent failures</strong> — a feed goes down; the agent keeps scoring on cached data without signalling degraded confidence.</li>
+      </ul>
+      <p>A pipeline architecture solves this by separating concerns into discrete, observable stages: ingestion → normalisation → scoring → decision → output. Each stage has a defined contract with the next. Failures are localised. Confidence degrades explicitly rather than silently.</p>
+
+      <h4>The five-stage model</h4>
+      <table>
+        <thead><tr><th>Stage</th><th>Input</th><th>Output</th><th>Failure mode</th></tr></thead>
+        <tbody>
+          <tr><td><strong>1. Ingestion</strong></td><td>Raw RPC calls, WebSocket events, REST feeds</td><td>Unvalidated raw records</td><td>Connection loss, rate limiting, provider outage</td></tr>
+          <tr><td><strong>2. Normalisation</strong></td><td>Raw records</td><td>Schema-validated, timestamped, deduplicated records</td><td>Schema mismatch, clock skew, duplicate events</td></tr>
+          <tr><td><strong>3. Scoring</strong></td><td>Normalised records</td><td>Scored, ranked opportunity set</td><td>Missing fields, division by zero in formula, stale input</td></tr>
+          <tr><td><strong>4. Decision</strong></td><td>Scored opportunities</td><td>Selected strategy candidates with confidence labels</td><td>All candidates below threshold, conflicting signals</td></tr>
+          <tr><td><strong>5. Output</strong></td><td>Strategy candidates</td><td>JSON report, alert, dashboard update, signed attestation</td><td>Serialisation error, delivery failure, consumer schema mismatch</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="data-taxonomy">Data source taxonomy</h3>
+      <p>DeFi research agents draw from four categories of data. Understanding the latency, reliability, and trust characteristics of each is prerequisite knowledge for designing the ingestion layer.</p>
+
+      <h4>On-chain data</h4>
+      <p>Data read directly from a blockchain's state or event logs via an RPC endpoint or indexer. The ground-truth layer — cryptographically final after sufficient confirmations.</p>
+      <ul>
+        <li><strong>State reads</strong> — <code>eth_call</code> to read protocol parameters, liquidity pool reserves, vault balances, governance states.</li>
+        <li><strong>Event logs</strong> — <code>eth_getLogs</code> for <code>Swap</code>, <code>Deposit</code>, <code>Borrow</code>, <code>LiquidationCall</code> events.</li>
+        <li><strong>Block metadata</strong> — block number, timestamp, base fee, proposer (for MEV context).</li>
+        <li><strong>Mempool data</strong> — pending transactions via Blocknative or Flashbots.</li>
+      </ul>
+      <p>Latency: 1–12s (block time). Trust: cryptographic. Cost: scales with RPC call volume.</p>
+
+      <h4>Off-chain data</h4>
+      <p>Data originating outside the blockchain — faster but requires explicit trust decisions.</p>
+      <ul>
+        <li><strong>CEX price feeds</strong> — Binance, Coinbase, Kraken REST/WebSocket APIs.</li>
+        <li><strong>Macro/news feeds</strong> — Bloomberg, Refinitiv, The Block, DeFiLlama news.</li>
+        <li><strong>Social sentiment</strong> — Twitter/X, Reddit, Telegram via LunarCrush or Santiment.</li>
+        <li><strong>Protocol risk scores</strong> — DeFi Safety, Gauntlet, Chaos Labs risk parameter APIs.</li>
+      </ul>
+
+      <h4>Oracle data</h4>
+      <p>Decentralised price feeds that sit on-chain but aggregate off-chain price data. On-chain in location, off-chain in origin.</p>
+      <ul>
+        <li><strong>Chainlink Data Feeds</strong> — aggregated spot prices, updated on deviation threshold or heartbeat.</li>
+        <li><strong>Pyth Network</strong> — pull-based oracle with sub-second updates, popular on Solana and EVM L2s.</li>
+        <li><strong>Uniswap v3 TWAP</strong> — time-weighted average price from on-chain swap history; manipulation-resistant but slow.</li>
+        <li><strong>Redstone</strong> — modular oracle supporting custom data types beyond spot price.</li>
+      </ul>
+
+      <h4>Protocol events and governance feeds</h4>
+      <ul>
+        <li><strong>Governance proposals</strong> — Snapshot, Tally, Governor Bravo APIs for pending votes.</li>
+        <li><strong>Parameter changes</strong> — collateral factor updates, interest rate model changes, fee tier adjustments.</li>
+        <li><strong>Liquidation thresholds</strong> — near-liquidation position tracking via The Graph or protocol-specific APIs.</li>
+        <li><strong>Protocol upgrades and pauses</strong> — proxy upgrade events, circuit breaker triggers.</li>
+      </ul>
+
+      <h3 id="decision-logic">Decision logic model</h3>
+      <p>The decision logic layer has three components: a scoring engine, a ranking layer, and a strategy selector.</p>
+      <p>The scoring engine applies OSF-1 to produce a numeric score per candidate. The ranking layer sorts by score and applies filters: minimum score threshold, minimum liquidity floor, maximum protocol concentration. The strategy selector matches top-ranked opportunities against a strategy library (e.g., <code>arb.cex-dex</code>, <code>yield.stablecoin-lp</code>, <code>liquidation.bonus</code>).</p>
+
+      <h3 id="trust-problem">The trust problem in autonomous agents</h3>
+      <p>Without a trust framework, agents are black boxes. The pipeline addresses this with three mechanisms:</p>
+      <ol>
+        <li><strong>Confidence labels</strong> — every output includes a <code>confidence</code> field derived from data completeness and source reliability.</li>
+        <li><strong>Data lineage</strong> — every output includes a <code>sources</code> array listing which feeds contributed, with freshness timestamps.</li>
+        <li><strong>Degradation signalling</strong> — if any required feed is stale beyond a threshold, output <code>status</code> is set to <code>degraded</code> rather than silently omitting data.</li>
+      </ol>
+      <div class="callout warning">
+        <strong>ZKML note</strong>
+        In 2026, some research agents expose ZK proofs of inference alongside outputs — cryptographic attestations that scoring was performed correctly on the claimed inputs. This is the ZKML pattern. Not required by this spec, but the direction high-stakes autonomous decision-making is heading.
+      </div>
+
+      <h3 id="output-model">Output model</h3>
+      <p>The pipeline supports four output formats, producible simultaneously:</p>
+      <ul>
+        <li><strong>JSON report</strong> — the canonical output. All scored opportunities, strategy candidates, data lineage, and confidence metadata.</li>
+        <li><strong>Alert</strong> — a lightweight notification (webhook, Telegram, Slack) when a scored opportunity exceeds a threshold.</li>
+        <li><strong>Dashboard</strong> — a real-time web view backed by a WebSocket connection to the agent's scoring output stream.</li>
+        <li><strong>Signed attestation</strong> — a cryptographically signed summary for downstream on-chain verification or audit trails.</li>
+      </ul>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- GUIDES                                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="doc-section" id="guides">
+    <div class="section-header">
+      <span class="page-tag p-guides">Guides</span>
+      <h2>Simulating the Research Agent Pipeline</h2>
+      <p>Step-by-step instructions for configuring and running each stage of a DeFi research agent pipeline, plus a full case study.</p>
+    </div>
+    <div class="doc-body">
+
+      <h3 id="setup">Guide 1 — Setting up the ingestion layer</h3>
+      <p>The ingestion layer pulls raw data from every configured source and places it into the normalisation queue. It runs continuously and must handle partial failures gracefully.</p>
+
+      <div class="step-block">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <h4>Configure your RPC providers</h4>
+          <p>Every ingestion layer needs at least two RPC endpoints per chain — a primary and a fallback. Single-provider setups fail silently when the provider rate-limits or goes offline.</p>
+<pre><span class="comment"># config/providers.yaml</span>
+chains:
+  ethereum:
+    primary:   <span class="str">"wss://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"</span>
+    fallback:  <span class="str">"https://rpc.ankr.com/eth/${ANKR_KEY}"</span>
+    archive:   <span class="str">"https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"</span>
+    block_time_ms: <span class="num">12000</span>
+  arbitrum:
+    primary:   <span class="str">"wss://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"</span>
+    fallback:  <span class="str">"https://rpc.ankr.com/arbitrum/${ANKR_KEY}"</span>
+    block_time_ms: <span class="num">250</span>
+  base:
+    primary:   <span class="str">"wss://base-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"</span>
+    fallback:  <span class="str">"https://mainnet.base.org"</span>
+    block_time_ms: <span class="num">2000</span></pre>
+        </div>
+      </div>
+
+      <div class="step-block">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <h4>Define protocol event subscriptions</h4>
+          <p>Use a declarative subscription file to specify which protocol events the ingestion layer should monitor. Each subscription maps a contract address and event signature to a data handler.</p>
+<pre><span class="comment"># config/subscriptions.yaml</span>
+subscriptions:
+  - id: <span class="str">"aave_v3_borrow"</span>
+    chain: <span class="str">"ethereum"</span>
+    address: <span class="str">"0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2"</span>
+    event:   <span class="str">"Borrow(address,address,address,uint256,uint8,uint256,uint16)"</span>
+    handler: <span class="str">"handlers.lending.on_borrow"</span>
+    priority: <span class="num">high</span>
+
+  - id: <span class="str">"uniswap_v3_swap"</span>
+    chain: <span class="str">"arbitrum"</span>
+    address: <span class="str">"*"</span>  <span class="comment"># wildcard: all UniV3 pools</span>
+    event:   <span class="str">"Swap(address,address,int256,int256,uint160,uint128,int24)"</span>
+    handler: <span class="str">"handlers.amm.on_swap"</span>
+    priority: <span class="num">medium</span>
+
+  - id: <span class="str">"compound_v3_liquidation"</span>
+    chain: <span class="str">"ethereum"</span>
+    address: <span class="str">"0xc3d688B66703497DAA19211EEdff47f25384cdc3"</span>
+    event:   <span class="str">"AbsorbCollateral(address,address,address,uint256,uint256)"</span>
+    handler: <span class="str">"handlers.lending.on_liquidation"</span>
+    priority: <span class="num">critical</span></pre>
+        </div>
+      </div>
+
+      <div class="step-block">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <h4>Configure off-chain feeds</h4>
+          <p>Off-chain feeds are polled on a schedule rather than subscribed to. Set a <code>ttl_seconds</code> for each — the normalisation layer uses this to mark data as stale and downgrade confidence scores.</p>
+<pre><span class="comment"># config/feeds.yaml</span>
+feeds:
+  - id: <span class="str">"binance_spot"</span>
+    type: <span class="str">"websocket"</span>
+    url: <span class="str">"wss://stream.binance.com:9443/ws/!ticker@arr"</span>
+    ttl_seconds: <span class="num">30</span>
+    normaliser: <span class="str">"normalisers.cex.binance"</span>
+
+  - id: <span class="str">"defillama_tvl"</span>
+    type: <span class="str">"rest_poll"</span>
+    url: <span class="str">"https://api.llama.fi/v2/protocols"</span>
+    poll_interval_seconds: <span class="num">120</span>
+    ttl_seconds: <span class="num">300</span>
+    normaliser: <span class="str">"normalisers.analytics.defillama"</span>
+
+  - id: <span class="str">"chainlink_eth_usd"</span>
+    type: <span class="str">"onchain_oracle"</span>
+    chain: <span class="str">"ethereum"</span>
+    address: <span class="str">"0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"</span>
+    heartbeat_seconds: <span class="num">3600</span>
+    ttl_seconds: <span class="num">4200</span>
+    normaliser: <span class="str">"normalisers.oracle.chainlink"</span></pre>
+        </div>
+      </div>
+
+      <h3 id="normalise">Guide 2 — Normalising on-chain and off-chain data</h3>
+      <p>Normalisation converts heterogeneous raw records into a common schema. The three most critical operations are timestamp alignment, token amount precision, and asset identifier normalisation.</p>
+      <p><strong>Timestamp alignment:</strong> different sources use different formats. The normaliser converts everything to Unix milliseconds UTC. Use the source <code>event_at</code> for causal ordering; use the agent-stamped <code>ingested_at</code> for latency calculations.</p>
+      <p><strong>Token amount precision:</strong> EVM token amounts are raw integers (e.g., <code>1000000</code> for 1 USDC at 6 decimals). Resolve decimals from a cached on-chain call and convert to decimal strings. Store the raw value alongside to prevent rounding errors.</p>
+      <p><strong>Asset identifier normalisation:</strong> the same asset may appear as <code>WETH</code>, <code>ETH</code>, <code>0xC02aaA...4082</code>, or <code>ethereum</code>. Map all representations to canonical IDs using a maintained asset registry.</p>
+<pre><span class="comment">// Example: normalised record output</span>
+{
+  <span class="key">"record_id"</span>:     <span class="str">"evt_arb_uniswap_0x7a3b...91c2_14829401"</span>,
+  <span class="key">"source_id"</span>:     <span class="str">"uniswap_v3_swap"</span>,
+  <span class="key">"source_type"</span>:   <span class="str">"onchain_event"</span>,
+  <span class="key">"chain"</span>:         <span class="str">"arbitrum"</span>,
+  <span class="key">"event_at"</span>:      <span class="num">1719432811000</span>,
+  <span class="key">"ingested_at"</span>:   <span class="num">1719432811340</span>,
+  <span class="key">"asset_in"</span>:  { <span class="key">"id"</span>: <span class="str">"WETH"</span>, <span class="key">"amount"</span>: <span class="str">"2.5"</span>, <span class="key">"raw"</span>: <span class="str">"2500000000000000000"</span> },
+  <span class="key">"asset_out"</span>: { <span class="key">"id"</span>: <span class="str">"USDC"</span>, <span class="key">"amount"</span>: <span class="str">"8312.44"</span>, <span class="key">"raw"</span>: <span class="str">"8312440000"</span> },
+  <span class="key">"price_usd"</span>:     <span class="str">"3324.976"</span>,
+  <span class="key">"confidence"</span>:    <span class="num">0.97</span>,
+  <span class="key">"data_freshness"</span>:<span class="str">"live"</span>
+}</pre>
+
+      <h3 id="scoring-guide">Guide 3 — Running the scoring engine</h3>
+      <p>The scoring engine consumes normalised records, groups them into opportunity candidates via a correlation engine, and applies OSF-1. An opportunity candidate is a group of records that together describe one actionable situation — e.g., a CEX price record + a DEX pool reserve read + a Chainlink oracle price forming a CEX-DEX arbitrage signal.</p>
+      <p>The correlation window is configurable (default: 5 seconds). Tighter windows reduce false positives but may miss slow-moving opportunities. In pseudocode:</p>
+<pre><span class="comment">// OSF-1 pseudocode</span>
+score = (yield_estimate * urgency_weight * confidence_factor)
+        / (risk_score + liquidity_penalty)
+
+yield_estimate    = expected_return_bps / 10000
+urgency_weight    = 1 + (1 / max(1, opportunity_age_seconds))
+confidence_factor = avg(source_confidences) * data_freshness_factor
+risk_score        = protocol_risk + oracle_risk + smart_contract_risk
+liquidity_penalty = 1 + max(0, (position_size / pool_liquidity) - 0.01) * 5</pre>
+
+      <h3 id="decision-guide">Guide 4 — Interpreting the decision layer output</h3>
+      <p>Each strategy candidate contains: the matched opportunity, the recommended strategy code, the expected entry parameters, and a confidence tier (A/B/C/D).</p>
+      <table>
+        <thead><tr><th>Tier</th><th>Score range</th><th>Meaning</th><th>Suggested action</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A</strong></td><td>0.80 – 1.00</td><td>High confidence, strong signal, low risk</td><td>Execute or escalate for human review</td></tr>
+          <tr><td><strong>B</strong></td><td>0.60 – 0.79</td><td>Good signal, moderate risk or data uncertainty</td><td>Flag for human analyst review</td></tr>
+          <tr><td><strong>C</strong></td><td>0.40 – 0.59</td><td>Weak signal or elevated risk</td><td>Monitor only; do not act</td></tr>
+          <tr><td><strong>D</strong></td><td>0.00 – 0.39</td><td>Below threshold; included for transparency</td><td>Discard</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="output-guide">Guide 5 — Reading and routing outputs</h3>
+      <p>The pipeline produces a primary JSON report each scoring cycle (default: every 60 seconds, or on-demand for critical events). Configure the output router in <code>config/outputs.yaml</code>:</p>
+<pre><span class="comment"># config/outputs.yaml</span>
+outputs:
+  - id: <span class="str">"json_file"</span>
+    type: <span class="str">"file"</span>
+    path: <span class="str">"./reports/latest.json"</span>
+    overwrite: <span class="num">true</span>
+
+  - id: <span class="str">"webhook_alert"</span>
+    type: <span class="str">"webhook"</span>
+    url: <span class="str">"${ALERT_WEBHOOK_URL}"</span>
+    filter: <span class="str">"tier == 'A'"</span>
+    payload_template: <span class="str">"templates/alert_slim.json"</span>
+
+  - id: <span class="str">"dashboard_ws"</span>
+    type: <span class="str">"websocket_server"</span>
+    port: <span class="num">8765</span>
+    emit_on: <span class="str">"every_cycle"</span></pre>
+
+      <!-- CASE STUDY -->
+      <hr style="border:none;border-top:1px solid var(--border);margin:2.5rem 0;">
+      <div class="case-header" id="case-study">
+        <h3>Case Study: OpenClawD &amp; AiXT Trading Intelligence</h3>
+        <p>A real-world-style walkthrough of how modern AI-augmented research agents feed their pipelines</p>
+      </div>
+
+      <p>OpenClawD and AiXT Trading Intelligence represent two distinct but complementary approaches to AI-augmented DeFi research. This case study traces the data path from raw chain state to scored output in both systems.</p>
+
+      <h4>OpenClawD — event-driven ingestion</h4>
+      <p>OpenClawD's architecture is designed around <em>reactive ingestion</em>: subscribes to a curated set of high-signal on-chain events and constructs opportunity candidates reactively when correlated events arrive.</p>
+
+      <div class="flow-diagram">
+<span class="fg">┌─ OpenClawD Ingestion Layer ──────────────────────────────────────────┐</span>
+<span class="fg">│                                                                       │</span>
+<span class="fa">│  WebSocket Subscriptions ──► Event Router ──► Correlation Engine    │</span>
+<span class="fg">│  (Alchemy / Infura)              │                     │             │</span>
+<span class="fg">│                                  │ routes by           │ groups by   │</span>
+<span class="fg">│                                  │ event type          │ asset+time  │</span>
+<span class="fp">│  Off-chain Feeds ────────────────┘                     ▼             │</span>
+<span class="fp">│  (Binance WS, Pyth, DeFiLlama)          Candidate Assembler         │</span>
+<span class="fa">│                                                         │             │</span>
+<span class="fr">│                                             OSF-1 Scoring Engine    │</span>
+<span class="fg">└───────────────────────────────────────────────────────────────────────┘</span>
+      </div>
+
+      <table>
+        <thead><tr><th>Source</th><th>Type</th><th>Data extracted</th><th>Refresh</th></tr></thead>
+        <tbody>
+          <tr><td>Alchemy WebSocket</td><td>On-chain events</td><td>Swap, Borrow, LiquidationCall, Transfer for monitored protocols</td><td>Per-block (12s / 250ms)</td></tr>
+          <tr><td>Pyth Network</td><td>Oracle</td><td>Real-time price updates for 80+ assets</td><td>400ms</td></tr>
+          <tr><td>Binance WebSocket</td><td>Off-chain CEX</td><td>Best bid/ask, 24h volume, funding rates for perp markets</td><td>100ms</td></tr>
+          <tr><td>Gauntlet Risk API</td><td>Protocol risk</td><td>Collateral risk scores, utilisation rates, risk parameter changes</td><td>5 min</td></tr>
+          <tr><td>Snapshot API</td><td>Governance</td><td>Active proposals, vote counts, time-to-close</td><td>15 min</td></tr>
+        </tbody>
+      </table>
+
+      <p>When a <code>Swap</code> event arrives from a Uniswap v3 pool, OpenClawD's normaliser: decodes the ABI-encoded log → resolves <code>token0</code>/<code>token1</code> to canonical IDs → converts raw integers to decimal strings → computes implied price from <code>sqrtPriceX96</code> → cross-references against the most recent Pyth price → stamps timestamps → pushes to the correlation queue. If the price deviation exceeds 0.5%, the record is tagged <code>price_divergence: true</code>, fast-tracking CEX-DEX arbitrage candidate assembly.</p>
+
+      <h4>AiXT Trading Intelligence — poll-and-model ingestion</h4>
+      <p>AiXT runs a continuous polling loop against a wider set of sources, feeds all data into a feature store, and applies a gradient-boosted tree model to score the feature vector every 30 seconds. Better suited for longer-horizon signals — macro yield trends, governance risk, protocol health — where event-driven ingestion would produce too much noise.</p>
+      <p>AiXT's feature vector per <code>(protocol, asset_pair, chain)</code> triplet includes: current APR and 7-day rolling average, utilisation rate and its 1h rate of change, TVL and its 24h rate of change, governance risk score, CEX funding rate, and a 4h rolling sentiment score from LunarCrush. The model is retrained weekly on new outcome data and outputs an OSF-1 compatible score, feeding the same decision layer as OpenClawD.</p>
+
+      <div class="callout success">
+        <strong>Key takeaway</strong>
+        Event-driven (OpenClawD) and poll-and-model (AiXT) are complementary, not competing. A production stack runs both: event-driven handles sub-minute opportunities; model-based handles multi-day signals. Both feed the same decision layer and produce the same output format.
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- REFERENCE                                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="doc-section" id="reference">
+    <div class="section-header">
+      <span class="page-tag p-reference">Reference</span>
+      <h2>Technical Specifications</h2>
+      <p>Complete API endpoints, JSON schemas, scoring formulas, and configuration options. Use this section as a lookup, not a reading guide.</p>
+    </div>
+    <div class="doc-body">
+
+      <h3 id="osf">Opportunity Scoring Formula (OSF-1)</h3>
+      <p>OSF-1 produces a dimensionless score in the range <code>[0, ∞)</code>. In practice well-formed opportunities score between 0.0 and 2.0; scores above 1.0 are exceptional.</p>
+
+<pre><span class="comment">/**
+ * OSF-1 — Opportunity Scoring Formula, version 1
+ *
+ * score = (Y × U × C) / (R + L)
+ *
+ * Y  — Yield estimate      (dimensionless, basis points / 10000)
+ * U  — Urgency weight      (dimensionless, ≥ 1.0)
+ * C  — Confidence factor   (0.0 – 1.0)
+ * R  — Risk score          (dimensionless, > 0)
+ * L  — Liquidity penalty   (dimensionless, ≥ 1.0)
+ */</span>
+
+Y = expected_return_bps / 10000
+<span class="comment">// For yield: APR difference between protocols
+// For arb:   price spread minus estimated gas cost in bps
+// For liq:   bonus percentage in bps</span>
+
+U = 1 + (1 / max(1, opportunity_age_seconds))
+<span class="comment">// 0s old: U=2.0 | 60s old: U≈1.016 | 300s old: U≈1.003</span>
+
+C = mean(source_confidences) × F
+<span class="comment">// F — data freshness factor:
+//   1.0  if all sources within TTL
+//   0.7  if any source is 1–2× TTL
+//   0.4  if any source is 2–3× TTL
+//   0.0  if any source exceeds 3× TTL</span>
+
+R = w_sc×SC + w_or×OR + w_lq×LQ
+<span class="comment">// SC: smart contract risk  OR: oracle risk  LQ: liquidity risk
+// Default weights: w_sc=0.5, w_or=0.3, w_lq=0.2</span>
+
+L = 1 + max(0, (position_size_usd / pool_liquidity_usd - 0.01)) × 5
+<span class="comment">// Neutral (1.0) at ≤1% of pool liquidity. Rises linearly above.</span></pre>
+
+      <table>
+        <thead><tr><th>Scenario</th><th>Y</th><th>U</th><th>C</th><th>R</th><th>L</th><th>Score</th><th>Tier</th></tr></thead>
+        <tbody>
+          <tr><td>CEX-DEX arb, 25bps, 0s old, live feeds</td><td>0.0025</td><td>2.0</td><td>0.95</td><td>0.25</td><td>1.01</td><td><strong>0.019</strong></td><td>—</td></tr>
+          <tr><td>Yield arb, 180bps, 30s old, live feeds</td><td>0.018</td><td>1.032</td><td>0.92</td><td>0.40</td><td>1.0</td><td><strong>0.043</strong></td><td>—</td></tr>
+          <tr><td>Liquidation, 5% bonus, 0s old, low-risk protocol</td><td>0.05</td><td>2.0</td><td>0.97</td><td>0.15</td><td>1.0</td><td><strong>0.647</strong></td><td>B</td></tr>
+          <tr><td>Liquidation, 8% bonus, 0s old, blue-chip</td><td>0.08</td><td>2.0</td><td>0.98</td><td>0.10</td><td>1.0</td><td><strong>1.568</strong></td><td>A</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Note on score magnitude</strong>
+        OSF-1 scores are only meaningful relative to each other within a single scoring cycle. Always use the tier label (A/B/C/D) for cross-cycle comparisons.
+      </div>
+
+      <h3 id="normalised-record">NormalisedRecord schema</h3>
+      <p>Every record produced by the normalisation stage must conform to this schema. Absent <code>required</code> fields cause the record to be dropped.</p>
+<pre>{
+  <span class="key">"record_id"</span>:      <span class="str">"string"</span>,   <span class="comment">// required — unique, deterministic ID</span>
+  <span class="key">"source_id"</span>:      <span class="str">"string"</span>,   <span class="comment">// required — subscription or feed id</span>
+  <span class="key">"source_type"</span>:    <span class="str">"string"</span>,   <span class="comment">// required — onchain_event | onchain_state | oracle | cex_feed | rest_api</span>
+  <span class="key">"chain"</span>:          <span class="str">"string"</span>,   <span class="comment">// required for onchain_* types</span>
+  <span class="key">"protocol"</span>:       <span class="str">"string"</span>,   <span class="comment">// optional — e.g. "aave_v3"</span>
+  <span class="key">"event_at"</span>:       <span class="num">number</span>,     <span class="comment">// required — Unix ms UTC (source timestamp)</span>
+  <span class="key">"ingested_at"</span>:    <span class="num">number</span>,     <span class="comment">// required — Unix ms UTC (agent receipt time)</span>
+  <span class="key">"block_number"</span>:   <span class="num">number</span>,     <span class="comment">// optional — for onchain_* types</span>
+  <span class="key">"tx_hash"</span>:        <span class="str">"string"</span>,   <span class="comment">// optional — 0x-prefixed hex</span>
+  <span class="key">"assets"</span>: [{                  <span class="comment">// required — at least one</span>
+    <span class="key">"id"</span>:        <span class="str">"string"</span>,      <span class="comment">// canonical asset id</span>
+    <span class="key">"role"</span>:      <span class="str">"string"</span>,      <span class="comment">// in | out | collateral | debt | supply</span>
+    <span class="key">"amount"</span>:    <span class="str">"string"</span>,      <span class="comment">// decimal string</span>
+    <span class="key">"amount_raw"</span>:<span class="str">"string"</span>,      <span class="comment">// original integer string</span>
+    <span class="key">"amount_usd"</span>:<span class="str">"string"</span>       <span class="comment">// USD value at event_at, if resolvable</span>
+  }],
+  <span class="key">"price_usd"</span>:      <span class="str">"string"</span>,   <span class="comment">// optional — implied price if single-pair event</span>
+  <span class="key">"metadata"</span>:       <span class="str">"object"</span>,   <span class="comment">// optional — source-specific extra fields</span>
+  <span class="key">"confidence"</span>:     <span class="num">number</span>,     <span class="comment">// required — 0.0–1.0</span>
+  <span class="key">"data_freshness"</span>: <span class="str">"string"</span>,   <span class="comment">// required — live | fresh | stale | expired</span>
+  <span class="key">"tags"</span>:           <span class="str">"string[]"</span>  <span class="comment">// optional — e.g. ["price_divergence"]</span>
+}</pre>
+
+      <h3 id="json-schema">Output JSON schema</h3>
+      <p>The primary output of each scoring cycle, produced as <code>latest.json</code> and optionally emitted over WebSocket.</p>
+<pre>{
+  <span class="key">"report_id"</span>:         <span class="str">"string"</span>,    <span class="comment">// UUID v4</span>
+  <span class="key">"generated_at"</span>:      <span class="num">number</span>,      <span class="comment">// Unix ms UTC</span>
+  <span class="key">"cycle_duration_ms"</span>: <span class="num">number</span>,
+  <span class="key">"status"</span>:            <span class="str">"string"</span>,    <span class="comment">// ok | degraded | error</span>
+  <span class="key">"degraded_feeds"</span>:    <span class="str">"string[]"</span>,
+  <span class="key">"opportunities"</span>: [{
+    <span class="key">"opp_id"</span>:               <span class="str">"string"</span>,
+    <span class="key">"type"</span>:                 <span class="str">"string"</span>,  <span class="comment">// arb.cex_dex | yield | liquidation | governance_risk</span>
+    <span class="key">"score"</span>:                <span class="num">number</span>,
+    <span class="key">"tier"</span>:                 <span class="str">"string"</span>,  <span class="comment">// A | B | C | D</span>
+    <span class="key">"strategy"</span>:             <span class="str">"string"</span>,
+    <span class="key">"assets"</span>:               <span class="str">"string[]"</span>,
+    <span class="key">"protocols"</span>:            <span class="str">"string[]"</span>,
+    <span class="key">"chains"</span>:               <span class="str">"string[]"</span>,
+    <span class="key">"estimated_return_bps"</span>: <span class="num">number</span>,
+    <span class="key">"estimated_return_usd"</span>: <span class="str">"string"</span>,
+    <span class="key">"risk_score"</span>:           <span class="num">number</span>,
+    <span class="key">"confidence"</span>:          <span class="num">number</span>,
+    <span class="key">"expires_at"</span>:           <span class="num">number</span>,
+    <span class="key">"sources"</span>: [{ <span class="key">"record_id"</span>:<span class="str">"string"</span>, <span class="key">"source_id"</span>:<span class="str">"string"</span>, <span class="key">"ingested_at"</span>:<span class="num">number</span>, <span class="key">"confidence"</span>:<span class="num">number</span> }]
+  }],
+  <span class="key">"summary"</span>: {
+    <span class="key">"total_candidates"</span>: <span class="num">number</span>, <span class="key">"tier_a_count"</span>: <span class="num">number</span>, <span class="key">"tier_b_count"</span>: <span class="num">number</span>,
+    <span class="key">"highest_score"</span>: <span class="num">number</span>, <span class="key">"feeds_healthy"</span>: <span class="num">number</span>, <span class="key">"feeds_degraded"</span>: <span class="num">number</span>
+  }
+}</pre>
+
+      <h3 id="api-endpoints">Data source API endpoints</h3>
+      <table>
+        <thead><tr><th>Source</th><th>Endpoint</th><th>Auth</th><th>Rate limit</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Alchemy (ETH)</td><td><code>wss://eth-mainnet.g.alchemy.com/v2/{key}</code></td><td>API key</td><td>Compute units / month</td><td>Prefer WebSocket for event subs; HTTPS for archive reads</td></tr>
+          <tr><td>Pyth Network</td><td><code>https://hermes.pyth.network/v2/updates/price/latest</code></td><td>None</td><td>None (best-effort)</td><td>Poll <code>?ids[]=</code> with price feed IDs. Max 100 ids per request.</td></tr>
+          <tr><td>Binance WebSocket</td><td><code>wss://stream.binance.com:9443/ws/{stream}</code></td><td>None (public)</td><td>300 connections / 5 min per IP</td><td>Use combined streams: <code>/stream?streams=ethusdt@bookTicker/btcusdt@bookTicker</code></td></tr>
+          <tr><td>DeFiLlama</td><td><code>https://api.llama.fi/v2/protocols</code></td><td>None</td><td>~300 req/min</td><td>For pool-level yield: <code>https://yields.llama.fi/pools</code></td></tr>
+          <tr><td>The Graph</td><td><code>https://api.thegraph.com/subgraphs/name/{subgraph}</code></td><td>API key</td><td>1000 req/day (free)</td><td>GraphQL POST. Use for historical queries; too slow for real-time.</td></tr>
+          <tr><td>Chainlink Data Feeds</td><td><code>eth_call</code> → <code>latestRoundData()</code></td><td>None (on-chain)</td><td>RPC rate limit</td><td>Returns <code>(roundId, answer, startedAt, updatedAt, answeredInRound)</code>. Check <code>updatedAt</code> vs heartbeat.</td></tr>
+          <tr><td>Gauntlet Risk API</td><td><code>https://risk.gauntlet.network/api/v1/protocols/{id}</code></td><td>API key</td><td>Per contract</td><td>Returns risk scores, utilisation, recommended parameters. B2B access required.</td></tr>
+          <tr><td>Snapshot</td><td><code>https://hub.snapshot.org/graphql</code></td><td>None</td><td>Unlisted, generous</td><td>GraphQL. Query <code>proposals</code> with <code>state: "active"</code> for live governance risk.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="asset-registry">Asset registry (common entries)</h3>
+      <table>
+        <thead><tr><th>Canonical ID</th><th>Symbol</th><th>Ethereum address</th><th>Decimals</th></tr></thead>
+        <tbody>
+          <tr><td><code>WETH</code></td><td>WETH</td><td><code>0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2</code></td><td>18</td></tr>
+          <tr><td><code>USDC</code></td><td>USDC</td><td><code>0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48</code></td><td>6</td></tr>
+          <tr><td><code>USDT</code></td><td>USDT</td><td><code>0xdAC17F958D2ee523a2206206994597C13D831ec7</code></td><td>6</td></tr>
+          <tr><td><code>WBTC</code></td><td>WBTC</td><td><code>0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599</code></td><td>8</td></tr>
+          <tr><td><code>stETH</code></td><td>stETH</td><td><code>0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84</code></td><td>18</td></tr>
+          <tr><td><code>DAI</code></td><td>DAI</td><td><code>0x6B175474E89094C44Da98b954EedeAC495271d0F</code></td><td>18</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="strategy-codes">Strategy codes</h3>
+      <table>
+        <thead><tr><th>Code</th><th>Name</th><th>Opportunity type</th><th>Typical Y range (bps)</th></tr></thead>
+        <tbody>
+          <tr><td><code>arb.cex_dex</code></td><td>CEX-DEX arbitrage</td><td>Price divergence between CEX spot and DEX pool</td><td>5 – 80</td></tr>
+          <tr><td><code>arb.dex_dex</code></td><td>DEX-DEX arbitrage</td><td>Price divergence between two DEX pools</td><td>2 – 40</td></tr>
+          <tr><td><code>arb.cross_chain</code></td><td>Cross-chain arbitrage</td><td>Price divergence across chains via bridge</td><td>10 – 200</td></tr>
+          <tr><td><code>yield.stable_lp</code></td><td>Stablecoin LP yield</td><td>Superior LP APR vs lending rate for same stablecoin</td><td>20 – 500</td></tr>
+          <tr><td><code>yield.lending</code></td><td>Lending rate arb</td><td>Supply/borrow rate spread across protocols</td><td>10 – 300</td></tr>
+          <tr><td><code>liquidation.bonus</code></td><td>Liquidation</td><td>Under-collateralised position with bonus &gt; gas cost</td><td>300 – 1500</td></tr>
+          <tr><td><code>governance.risk_flag</code></td><td>Governance risk signal</td><td>Active proposal changing protocol risk parameters</td><td>N/A (informational)</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="config-reference">Configuration reference</h3>
+      <p>All configuration files live in <code>config/</code>. Hot reload is supported for <code>feeds.yaml</code>, <code>scoring.yaml</code>, and <code>outputs.yaml</code>; restart required for <code>providers.yaml</code> and <code>subscriptions.yaml</code>.</p>
+      <table>
+        <thead><tr><th>File</th><th>Hot reload</th><th>Key fields</th></tr></thead>
+        <tbody>
+          <tr><td><code>providers.yaml</code></td><td>No</td><td><code>chains[].primary</code>, <code>.fallback</code>, <code>.block_time_ms</code></td></tr>
+          <tr><td><code>subscriptions.yaml</code></td><td>No</td><td><code>subscriptions[].id</code>, <code>.chain</code>, <code>.address</code>, <code>.event</code>, <code>.handler</code>, <code>.priority</code></td></tr>
+          <tr><td><code>feeds.yaml</code></td><td>Yes</td><td><code>feeds[].id</code>, <code>.type</code>, <code>.url</code>, <code>.poll_interval_seconds</code>, <code>.ttl_seconds</code>, <code>.normaliser</code></td></tr>
+          <tr><td><code>scoring.yaml</code></td><td>Yes</td><td><code>osf1.weights.*</code>, <code>thresholds.min_score</code>, <code>thresholds.min_liquidity_usd</code>, <code>correlation_window_seconds</code></td></tr>
+          <tr><td><code>outputs.yaml</code></td><td>Yes</td><td><code>outputs[].id</code>, <code>.type</code>, <code>.filter</code>, <code>.payload_template</code></td></tr>
+        </tbody>
+      </table>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TROUBLESHOOTING                                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="doc-section" id="troubleshooting">
+    <div class="section-header">
+      <span class="page-tag p-trouble">Troubleshooting</span>
+      <h2>Diagnosing Pipeline Issues</h2>
+      <p>Common failure modes, their symptoms, and how to fix them. Organised by pipeline stage.</p>
+    </div>
+    <div class="doc-body">
+
+      <div class="callout info">
+        <strong>Before diving in</strong>
+        Most pipeline issues produce a <code>status: "degraded"</code> or <code>status: "error"</code> field in the output JSON, with a <code>degraded_feeds</code> array listing affected sources. Start there — it identifies which stage to investigate first.
+      </div>
+
+      <h3 id="ingestion-issues">Ingestion failures</h3>
+
+      <div class="issue-block">
+        <div class="issue-header">
+          <span class="issue-stage stage-ingest">Ingestion</span>
+          <span class="issue-title">WebSocket connection drops silently</span>
+        </div>
+        <div class="issue-body">
+          <p class="symptom">Symptom: The agent is running, the feed shows as <code>live</code>, but no new events have arrived for several minutes. Opportunity scores based on this feed begin degrading.</p>
+          <span class="fix-label">Cause</span>
+          <p>WebSocket providers (including Alchemy and Infura) silently drop connections after periods of low activity or when the server rotates. The client does not receive a close frame, so it does not attempt to reconnect.</p>
+          <span class="fix-label">Fix</span>
+          <p>Implement a heartbeat check: if no message has been received within <code>2 × block_time_ms</code>, close and reconnect. For Ethereum mainnet: ~24 seconds. For Arbitrum: 500ms.</p>
+<pre><span class="comment">// Heartbeat pattern (pseudocode)</span>
+lastMessageAt = Date.now()
+ws.on('message', () => { lastMessageAt = Date.now() })
+setInterval(() => {
+  if (Date.now() - lastMessageAt > 2 * BLOCK_TIME_MS) {
+    log.warn('Heartbeat timeout — reconnecting')
+    ws.close(); reconnect()
+  }
+}, BLOCK_TIME_MS)</pre>
+        </div>
+      </div>
+
+      <div class="issue-block">
+        <div class="issue-header">
+          <span class="issue-stage stage-ingest">Ingestion</span>
+          <span class="issue-title">RPC provider rate limit (429 errors)</span>
+        </div>
+        <div class="issue-body">
+          <p class="symptom">Symptom: Logs show repeated <code>429 Too Many Requests</code>. State reads are failing or returning stale data. On-chain confidence values drop sharply.</p>
+          <span class="fix-label">Cause</span>
+          <p>Archive node reads are high-compute-unit operations. A burst of event-triggered state reads can exhaust the hourly compute budget quickly.</p>
+          <span class="fix-label">Fix</span>
+          <ol>
+            <li>Switch to the fallback provider immediately on a 429 — don't wait for a retry interval.</li>
+            <li>Cache state reads with a 10-minute TTL; only re-fetch on parameter-change events.</li>
+            <li>Use Multicall3 (<code>0xcA11bde05977b3631167028862bE2a173976CA11</code>) to batch multiple <code>eth_call</code>s into a single RPC call.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="issue-block">
+        <div class="issue-header">
+          <span class="issue-stage stage-ingest">Ingestion</span>
+          <span class="issue-title">Off-chain feed returns stale data without error</span>
+        </div>
+        <div class="issue-body">
+          <p class="symptom">Symptom: A REST feed returns a 200 response, but the <code>updatedAt</code> in the payload is several hours old. The normaliser marks the record as <code>fresh</code> because the HTTP response was successful.</p>
+          <span class="fix-label">Fix</span>
+          <p>Every normaliser must validate the payload's own timestamp, not just HTTP status. If the payload's <code>updatedAt</code> exceeds the feed's <code>ttl_seconds</code>, mark the record as <code>stale</code> regardless of HTTP status.</p>
+        </div>
+      </div>
+
+      <h3 id="normalisation-issues">Normalisation errors</h3>
+
+      <div class="issue-block">
+        <div class="issue-header">
+          <span class="issue-stage stage-norm">Normalisation</span>
+          <span class="issue-title">Token decimals resolution failure</span>
+        </div>
+        <div class="issue-body">
+          <p class="symptom">Symptom: Records for a specific token arrive with <code>amount: null</code> or wildly incorrect USD values. Normaliser log shows <code>WARN: decimals cache miss for 0x...</code>.</p>
+          <span class="fix-label">Fix</span>
+          <ol>
+            <li>Add a circuit breaker: if resolution fails twice within 5 minutes, add the address to a <code>pending_resolution</code> list and skip records for it rather than passing through with a null amount.</li>
+            <li>Pre-populate the decimals cache from the asset registry at startup — don't rely solely on on-chain resolution.</li>
+            <li>For rebasing tokens (stETH, aTokens), <code>decimals()</code> returns 18 but the rebase factor must be fetched separately. Use the protocol-specific normaliser, not the generic ERC-20 one.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="issue-block">
+        <div class="issue-header">
+          <span class="issue-stage stage-norm">Normalisation</span>
+          <span class="issue-title">Duplicate records in the queue</span>
+        </div>
+        <div class="issue-body">
+          <p class="symptom">Symptom: The same on-chain event appears twice, causing duplicate opportunity candidates with identical scores.</p>
+          <span class="fix-label">Fix</span>
+          <p>Generate a deterministic <code>record_id</code> using <code>sha256(tx_hash + log_index)</code>. Before inserting into the queue, check against a deduplication bloom filter with a 10-minute TTL. Reject records whose <code>record_id</code> is already in the filter.</p>
+        </div>
+      </div>
+
+      <h3 id="scoring-issues">Scoring issues</h3>
+
+      <div class="issue-block">
+        <div class="issue-header">
+          <span class="issue-stage stage-score">Scoring</span>
+          <span class="issue-title">All opportunities scoring near zero</span>
+        </div>
+        <div class="issue-body">
+          <p class="symptom">Symptom: Scoring engine is running, candidates are being assembled, but all OSF-1 scores are below 0.01. No tier-A or tier-B candidates. Market conditions appear normal.</p>
+          <span class="fix-label">Cause (most common)</span>
+          <p>The confidence factor <code>C</code> is collapsing to near-zero because one or more critical feeds have exceeded their TTL. Check the output JSON's <code>degraded_feeds</code> array. Fix the feed, not the formula.</p>
+          <span class="fix-label">Cause (secondary)</span>
+          <p>OSF-1 weights changed in <code>scoring.yaml</code> without re-calibrating the minimum score thresholds. After any weight change, run the scoring engine against a historical snapshot and compare score distributions before and after.</p>
+        </div>
+      </div>
+
+      <div class="issue-block">
+        <div class="issue-header">
+          <span class="issue-stage stage-score">Scoring</span>
+          <span class="issue-title">Scoring engine timeout on large candidate sets</span>
+        </div>
+        <div class="issue-body">
+          <p class="symptom">Symptom: During high-volatility periods, the scoring cycle exceeds its configured timeout. Output is delayed or emitted with <code>status: "error"</code>.</p>
+          <span class="fix-label">Fix</span>
+          <p>Implement a candidate cap: if more than N=500 candidates are assembled in a single correlation window, apply a pre-scoring filter: (1) discard candidates with any expired source; (2) discard candidates below a minimum raw yield estimate; (3) sample uniformly from remaining up to N.</p>
+        </div>
+      </div>
+
+      <h3 id="output-issues">Output problems</h3>
+
+      <div class="issue-block">
+        <div class="issue-header">
+          <span class="issue-stage stage-output">Output</span>
+          <span class="issue-title">Webhook alerts not firing for tier-A opportunities</span>
+        </div>
+        <div class="issue-body">
+          <p class="symptom">Symptom: The JSON report shows tier-A opportunities, but no webhook alert is delivered. No error in the output router log.</p>
+          <span class="fix-label">Fix</span>
+          <p>Test filter expressions using the pipeline's built-in evaluator:</p>
+<pre>npx agent-pipeline test-filter \
+  --filter <span class="str">"tier == 'A'"</span> \
+  --sample-report <span class="str">"./reports/latest.json"</span>
+<span class="comment">// Should output: "Filter matched 3 of 12 opportunities"</span></pre>
+          <p>If the evaluator returns 0 matches on a report with tier-A entries, the filter syntax is wrong. Refer to the filter expression language reference in <code>config/outputs.yaml</code> comments.</p>
+        </div>
+      </div>
+
+      <div class="issue-block">
+        <div class="issue-header">
+          <span class="issue-stage stage-output">Output</span>
+          <span class="issue-title">Consumer reports schema validation failure</span>
+        </div>
+        <div class="issue-body">
+          <p class="symptom">Symptom: A downstream system rejects the output JSON with an error like <code>required field 'estimated_return_usd' missing</code>.</p>
+          <span class="fix-label">Fix</span>
+          <p>The pipeline emits a <code>schema_version</code> field at the top level of every output report. Downstream consumers should check this field and reject with a clear version mismatch error rather than a field-level validation error. Coordinate schema upgrades using the changelog at <code>docs/schema-changelog.md</code>.</p>
+        </div>
+      </div>
+
+      <h3 id="checklist">First-response checklist</h3>
+      <table>
+        <thead><tr><th>#</th><th>Check</th><th>Where to look</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Is <code>status</code> in the latest output JSON <code>ok</code>, <code>degraded</code>, or <code>error</code>?</td><td><code>./reports/latest.json</code> → top-level <code>status</code></td></tr>
+          <tr><td>2</td><td>Are any feeds listed in <code>degraded_feeds</code>?</td><td><code>./reports/latest.json</code> → <code>degraded_feeds</code> array</td></tr>
+          <tr><td>3</td><td>Is the scoring cycle completing within its timeout budget?</td><td>Logs → <code>cycle_duration_ms</code>; alert if &gt; 80% of configured timeout</td></tr>
+          <tr><td>4</td><td>Is the normalised record queue growing (backpressure)?</td><td>Metrics dashboard → <code>queue_depth</code> gauge</td></tr>
+          <tr><td>5</td><td>Is the primary RPC provider responding?</td><td>Run: <code>curl -X POST {rpc_url} -d '{"method":"eth_blockNumber","params":[],"id":1}'</code></td></tr>
+          <tr><td>6</td><td>Did any config file change in the last deploy?</td><td><code>git log -5 -- config/</code></td></tr>
+          <tr><td>7</td><td>Is the system clock synchronised?</td><td>Run: <code>timedatectl status</code> or <code>ntpstat</code></td></tr>
+        </tbody>
+      </table>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <p>DeFi Research Agent Pipeline Docs · Samuel Olaide Oba · v1.0 · 2026</p>
+    <p>Built with the Diataxis documentation framework</p>
+  </footer>
+
+</main>
+
+<script>
+// ─── MOBILE MENU ───────────────────────────────────────────────────
+const toggle = document.getElementById('menuToggle');
+const sidebar = document.getElementById('sidebar');
+toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+document.addEventListener('click', e => {
+  if (!sidebar.contains(e.target) && e.target !== toggle) sidebar.classList.remove('open');
+});
+
+// ─── ACTIVE SIDEBAR LINK ON SCROLL ────────────────────────────────
+const allLinks = document.querySelectorAll('.sidebar-link, .sidebar-section-link');
+const allAnchors = [...allLinks].map(l => {
+  const href = l.getAttribute('href');
+  const el = href ? document.querySelector(href) : null;
+  return { link: l, el };
+}).filter(x => x.el);
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const href = '#' + entry.target.id;
+      allLinks.forEach(l => l.classList.remove('active'));
+      allAnchors.filter(a => a.link.getAttribute('href') === href)
+        .forEach(a => a.link.classList.add('active'));
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+allAnchors.forEach(({ el }) => observer.observe(el));
+
+// Close mobile sidebar on link click
+allLinks.forEach(l => l.addEventListener('click', () => sidebar.classList.remove('open')));
+</script>
+
+</body>
+</html>
